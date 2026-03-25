@@ -32,5 +32,8 @@ declare global {
       showItemInFolder: (filePath: string) => Promise<void>;
       openInEditor: (url: string, revision?: string) => Promise<string>;
     };
+    appNav: {
+      onSwipe: (callback: (direction: string) => void) => () => void;
+    };
   }
 }

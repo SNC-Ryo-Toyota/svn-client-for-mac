@@ -16,6 +16,8 @@ export default function App() {
 
   const hasWorkspace = workspace.wcPath || workspace.repoUrl;
 
+  console.log('[App] render — workspace:', JSON.stringify(workspace), 'currentView:', currentView, 'hasWorkspace:', hasWorkspace);
+
   const renderView = () => {
     if (!hasWorkspace) {
       return (

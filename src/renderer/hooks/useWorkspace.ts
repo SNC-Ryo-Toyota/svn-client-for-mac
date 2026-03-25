@@ -33,15 +33,22 @@ export function useWorkspace() {
   }, []);
 
   const openRepositoryUrl = useCallback(async (url: string) => {
+    console.log('[useWorkspace] openRepositoryUrl called:', url);
     try {
       const info = await window.svn.info(url);
-      setWorkspace(prev => ({
-        ...prev,
-        repoUrl: url,
-        repoRoot: info.repositoryRoot,
-      }));
+      console.log('[useWorkspace] svn info result:', JSON.stringify(info));
+      setWorkspace(prev => {
+        const next = {
+          ...prev,
+          repoUrl: url,
+          repoRoot: info.repositoryRoot,
+        };
+        console.log('[useWorkspace] setWorkspace:', JSON.stringify(next));
+        return next;
+      });
       setCurrentView('browse');
     } catch (err: any) {
+      console.error('[useWorkspace] openRepositoryUrl error:', err);
       throw new Error('リポジトリに接続できません: ' + (err.message || err));
     }
   }, []);

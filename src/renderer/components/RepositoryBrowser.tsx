@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface BrowserProps {
   repoUrl: string | null;
@@ -18,25 +18,32 @@ interface ListEntry {
 }
 
 export function RepositoryBrowser({ repoUrl, repoRoot, wcPath, onError, onInfo }: BrowserProps) {
+  console.log('[RepositoryBrowser] render — repoUrl:', repoUrl, 'repoRoot:', repoRoot, 'wcPath:', wcPath);
   const [currentUrl, setCurrentUrl] = useState<string>(repoUrl || '');
   const [entries, setEntries] = useState<ListEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const [showUrlInput, setShowUrlInput] = useState(!repoUrl);
+  const historyStack = useRef<string[]>([]);
+  const historyIndex = useRef(-1);
+  const isNavigatingHistory = useRef(false);
 
-  useEffect(() => {
-    if (repoUrl && !currentUrl) {
-      setCurrentUrl(repoUrl);
-    }
-  }, [repoUrl]);
-
-  const browse = useCallback(async (url: string) => {
+  const browse = useCallback(async (url: string, skipHistory = false) => {
+    console.log('[RepositoryBrowser] browse called:', url, 'skipHistory:', skipHistory);
     setLoading(true);
     try {
       const result = await window.svn.list(url);
+      console.log('[RepositoryBrowser] svn list result:', result?.length, 'entries');
       setEntries(result);
       setCurrentUrl(url);
       setShowUrlInput(false);
+      if (!skipHistory && !isNavigatingHistory.current) {
+        const stack = historyStack.current;
+        const idx = historyIndex.current;
+        historyStack.current = [...stack.slice(0, idx + 1), url];
+        historyIndex.current = historyStack.current.length - 1;
+      }
+      isNavigatingHistory.current = false;
     } catch (err: any) {
       onError('ブラウズ失敗: ' + (err.message || err));
     } finally {
@@ -44,11 +51,37 @@ export function RepositoryBrowser({ repoUrl, repoRoot, wcPath, onError, onInfo }
     }
   }, [onError]);
 
+  // repoUrl prop が変わったら（初回マウント含む）自動でブラウズ開始
   useEffect(() => {
-    if (currentUrl) {
-      browse(currentUrl);
+    console.log('[RepositoryBrowser] useEffect[repoUrl] fired — repoUrl:', repoUrl);
+    if (repoUrl) {
+      browse(repoUrl);
     }
-  }, []);
+  }, [repoUrl]);
+
+  const goBack = useCallback(() => {
+    if (historyIndex.current > 0) {
+      isNavigatingHistory.current = true;
+      historyIndex.current--;
+      browse(historyStack.current[historyIndex.current], true);
+    }
+  }, [browse]);
+
+  const goForward = useCallback(() => {
+    if (historyIndex.current < historyStack.current.length - 1) {
+      isNavigatingHistory.current = true;
+      historyIndex.current++;
+      browse(historyStack.current[historyIndex.current], true);
+    }
+  }, [browse]);
+
+  useEffect(() => {
+    const cleanup = window.appNav.onSwipe((direction: string) => {
+      if (direction === 'right') goBack();
+      else if (direction === 'left') goForward();
+    });
+    return cleanup;
+  }, [goBack, goForward]);
 
   const navigateTo = (entry: ListEntry) => {
     if (entry.kind === 'dir') {
@@ -144,6 +177,12 @@ export function RepositoryBrowser({ repoUrl, repoRoot, wcPath, onError, onInfo }
       <div className="panel-header">
         <h2>リポジトリブラウザ</h2>
         <div style={{ flex: 1 }} />
+        <button className="btn btn-sm" onClick={goBack} disabled={historyIndex.current <= 0} title="戻る">
+          ◀
+        </button>
+        <button className="btn btn-sm" onClick={goForward} disabled={historyIndex.current >= historyStack.current.length - 1} title="進む">
+          ▶
+        </button>
         <button className="btn btn-sm" onClick={() => setShowUrlInput(true)}>
           URL変更
         </button>

@@ -33,6 +33,15 @@ const shellApi = {
   openInEditor: (url: string, revision?: string) => ipcRenderer.invoke('file:openInEditor', url, revision),
 };
 
+const navigationApi = {
+  onSwipe: (callback: (direction: string) => void) => {
+    const listener = (_event: any, direction: string) => callback(direction);
+    ipcRenderer.on('navigate:swipe', listener);
+    return () => { ipcRenderer.removeListener('navigate:swipe', listener); };
+  },
+};
+
 contextBridge.exposeInMainWorld('svn', svnApi);
 contextBridge.exposeInMainWorld('dialog', dialogApi);
 contextBridge.exposeInMainWorld('shell', shellApi);
+contextBridge.exposeInMainWorld('appNav', navigationApi);

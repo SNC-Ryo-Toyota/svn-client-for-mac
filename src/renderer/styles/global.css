@@ -336,6 +336,46 @@ select.input {
   flex-shrink: 0;
 }
 
+.file-tree-item .btn-log-inline {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  padding: 0 4px;
+  font-size: 12px;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.file-tree-item:hover .btn-log-inline {
+  opacity: 1;
+}
+
+/* Browser inline log panel */
+.browser-log-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 180px;
+  border-top: 2px solid var(--accent);
+  background: var(--bg-primary);
+}
+
+.browser-log-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.browser-log-title {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+
 .file-tree-children {
   padding-left: 16px;
 }
